@@ -26,7 +26,7 @@ This is somewhere. Some of the works here celebrate the fire. Some keep a carefu
 
 | N° | Work | Author | Year | Length |
 |:--:|------|--------|:----:|--------|
-| 01 | [**The World as Phantom and as Matrix**](https://jcgaal.github.io/promethean/the-world-as-phantom-and-as-matrix/) | Günther Anders | 1956 | 5 chapters · 28 sections · 58 notes · about three hours |
+| 01 | [**The World as Phantom and as Matrix**](https://promethean.nfnto.com/the-world-as-phantom-and-as-matrix/index.html) | Günther Anders | 1956 | 5 chapters · 28 sections · 58 notes · about three hours |
 | 02 | *In the forge* | | | |
 
 ### N° 01 · The World as Phantom and as Matrix
@@ -59,7 +59,7 @@ What the page does while you read (subject to change on each publication):
 ## Reading it locally
 
 ```bash
-git clone https://github.com/jcgaal/Promethean.git
+git clone https://github.com/jcgaal/promethean.git
 cd Promethean
 python3 -m http.server 8000
 ```
@@ -73,7 +73,7 @@ The live site is GitHub Pages serving the root of `main`. There is nothing to co
 ## Structure
 
 ```
-Promethean/
+promethean/
 ├── index.html                              The contents: name, premise, every work in the series
 ├── prometheus-brings-fire.jpg              Füger, 1817
 └── the-world-as-phantom-and-as-matrix/     N° 01
