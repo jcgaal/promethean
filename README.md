@@ -6,7 +6,7 @@
 
 Long texts that made the world, the way they were meant to be read.
 
-**[Enter the series ↗](https://jcgaal.github.io/promethean/)**
+**[Enter the series ↗](https://promethean.nfnto.com/)**
 
 ---
 
@@ -43,7 +43,7 @@ He was writing about the television. You will probably read it on a phone.
 
 Each work is one self-contained HTML page. No framework, no build step, no account, no tracking. Open it and read.
 
-What the page does while you read:
+What the page does while you read (subject to change on each publication):
 
 - **The spine.** A rail down the left edge maps every chapter and marks where you are inside it. The series name at its foot takes you back to the contents.
 - **The lectern** (`S`). Text size, typeface (Cormorant or EB Garamond), measure, leading, the Void and Vellum surfaces, a focus line that dims everything except the paragraph you are on, an ambient flame behind the text, and paragraph numbers for citing.
