@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <title>Promethean · The Promethean Series</title>
+    <meta name="description" content="The Promethean Series: reading experiences built around the works of thought that made, and keep making, the world we stand on. In honour of the species that keeps stealing fire.">
+    <meta name="theme-color" content="#030303">
+    <meta property="og:title" content="Promethean">
+    <meta property="og:description" content="Reading experiences built around the works of thought that made the world we stand on.">
+    <meta property="og:type" content="website">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;600&family=JetBrains+Mono:wght@400&display=swap" rel="stylesheet">
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js" defer></script>
+
+    <style>
+        :root {
+            --text-primary: #FFF7E0;
+            --text-secondary: rgba(255, 247, 224, 0.62);
+            --ui-accent: #D96B27;
+            --rule: rgba(255, 247, 224, 0.12);
+            --scrim: rgba(3, 3, 3, 0.74);
+            --void: #030303;
+
+            --font-hero: 'Instrument Serif', serif;
+            --font-ui: 'Inter', sans-serif;
+            --font-mono: 'JetBrains Mono', monospace;
+
+            --pad: max(3vw, 16px);
+            color-scheme: dark;
+        }
+
+        body.theme-light {
+            --text-primary: #1a1614;
+            --text-secondary: rgba(26, 22, 20, 0.62);
+            --ui-accent: #B4521A;
+            --rule: rgba(26, 22, 20, 0.14);
+            --scrim: rgba(242, 235, 221, 0.82);
+            --void: #F2EBDD;
+            color-scheme: light;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+
+        body, html {
+            width: 100%;
+            overflow-x: hidden;
+            background-color: #030303;
+            font-family: var(--font-ui);
+            color: var(--text-primary);
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            transition: color 1.5s cubic-bezier(0.4, 0, 0.2, 1);
+            /* Fallback when WebGL is unavailable: the fold, drawn in CSS */
+            background-image: linear-gradient(51deg, #030303 0%, #030303 38%, #5a1d07 58%, #c9a881 100%);
+            background-attachment: fixed;
+        }
+        body.theme-light {
+            background-color: #F2EBDD;
+            background-image: linear-gradient(51deg, #F2EBDD 0%, #F2EBDD 38%, #D97A57 62%, #8C2B1A 100%);
+        }
+
+        ::selection { background: rgba(217, 107, 39, 0.35); color: var(--text-primary); }
+        a { color: inherit; }
+        :focus-visible { outline: 1px solid var(--ui-accent); outline-offset: 4px; }
+
+        .skip {
+            position: absolute; left: var(--pad); top: -40px; z-index: 50;
+            font-family: var(--font-mono); font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.05em;
+            background: var(--void); color: var(--text-primary); padding: 0.5rem 0.75rem; text-decoration: none;
+        }
+        .skip:focus { top: var(--pad); }
+
+        #canvas-container {
+            position: fixed;
+            inset: 0;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        #ui-layer {
+            position: relative;
+            z-index: 10;
+            width: 100%;
+        }
+
+        /* ───── Header ───── */
+        header.top {
+            position: fixed;
+            top: 0; left: 0; right: 0;
+            z-index: 20;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: var(--pad);
+            pointer-events: none;
+        }
+        header.top > * { pointer-events: auto; }
+
+        .logo {
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: -0.02em;
+            text-transform: lowercase;
+            text-decoration: none;
+            color: inherit;
+        }
+
+        .controls {
+            display: flex;
+            gap: 2rem;
+            font-size: 0.75rem;
+            font-family: var(--font-mono);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        button, .nav-link {
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            font-family: inherit;
+            font-size: inherit;
+            cursor: pointer;
+            transition: color 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            text-decoration: none;
+        }
+        button:hover, .nav-link:hover, .nav-link.active { color: var(--text-primary); }
+
+        .theme-toggle-container { display: flex; align-items: center; gap: 0.5rem; }
+        .theme-indicator {
+            width: 4px; height: 4px;
+            background-color: var(--ui-accent);
+            border-radius: 50%;
+            transition: background-color 1.5s ease;
+        }
+
+        /* ───── Hero ───── */
+        .hero-screen {
+            min-height: 100vh;
+            min-height: 100svh;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr auto;
+            padding: calc(var(--pad) + 3rem) var(--pad) var(--pad);
+        }
+
+        .hero {
+            grid-column: 1 / -1;
+            grid-row: 1;
+            align-self: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+        }
+
+        .hero-kicker {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+            margin-bottom: 1.5rem;
+            transform: translateX(-4vw);
+        }
+
+        h1 {
+            font-family: var(--font-hero);
+            font-size: clamp(4rem, 15vw, 17rem);
+            font-weight: 400;
+            line-height: 0.85;
+            letter-spacing: -0.03em;
+            margin-bottom: 1.25rem;
+            transform: translateX(-2vw);
+        }
+        h1 em { font-style: italic; }
+
+        .hero-sub {
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+            transform: translateX(5vw);
+            max-width: 46ch;
+            line-height: 1.7;
+        }
+
+        .hero, .definition-block, .footer-info { text-shadow: 0 2px 22px rgba(0, 0, 0, 0.55); }
+        body.theme-light .hero, body.theme-light .definition-block, body.theme-light .footer-info { text-shadow: 0 1px 18px rgba(242, 235, 221, 0.6); }
+
+        .definition-block {
+            grid-column: 1;
+            grid-row: 2;
+            align-self: end;
+            max-width: 300px;
+            font-size: 0.75rem;
+            line-height: 1.4;
+        }
+        .def-word {
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: -0.03em;
+            margin-bottom: 0.2rem;
+            color: var(--text-primary);
+        }
+        .def-meta {
+            color: var(--text-secondary);
+            margin-bottom: 0.8rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.1rem;
+        }
+        .def-phonetic { font-style: italic; }
+        .def-text { color: var(--text-primary); opacity: 0.9; }
+
+        .footer-info {
+            grid-column: 2;
+            grid-row: 2;
+            align-self: end;
+            justify-self: end;
+            text-align: right;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .footer-info a { color: inherit; text-decoration: none; transition: color 0.3s ease; }
+        .footer-info a:hover { color: var(--text-primary); }
+
+        /* ───── Reading surfaces ───── */
+        .surface {
+            background: linear-gradient(to bottom, transparent 0, var(--scrim) 14vh, var(--scrim) 100%);
+            transition: background 1.5s ease;
+        }
+
+        .label {
+            display: block;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.2em;
+            color: var(--text-secondary);
+        }
+
+        .manifesto {
+            padding: 22vh var(--pad) 14vh;
+        }
+        .manifesto-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: 80px 1fr;
+            gap: 0;
+        }
+        .manifesto .label { padding-top: 0.9rem; }
+        .manifesto-body { max-width: 55em; }
+        .manifesto p {
+            font-family: var(--font-hero);
+            font-size: clamp(1.45rem, 2.3vw, 2.1rem);
+            line-height: 1.28;
+            letter-spacing: -0.005em;
+        }
+        .manifesto p + p { margin-top: 1.1em; }
+        .manifesto p em { color: var(--ui-accent); transition: color 1.5s ease; }
+
+        .contents {
+            background: var(--scrim);
+            transition: background 1.5s ease;
+            padding: 6vh var(--pad) 18vh;
+        }
+
+        .work-container {
+            width: 100%;
+            max-width: 1100px;
+            margin: 0 auto;
+        }
+
+        .contents-head {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            padding-bottom: 1.25rem;
+            border-bottom: 1px solid var(--rule);
+        }
+
+        .work-item {
+            display: grid;
+            grid-template-columns: 80px 1fr auto;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2.5rem 0;
+            border-bottom: 1px solid var(--rule);
+            text-decoration: none;
+            color: inherit;
+            transition: transform 0.4s cubic-bezier(0.2, 0, 0.2, 1);
+        }
+        a.work-item:hover { transform: translateX(10px); }
+        a.work-item:hover .work-title em { color: var(--ui-accent); }
+
+        .work-number {
+            font-family: var(--font-mono);
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            align-self: flex-start;
+            padding-top: 1.2rem;
+        }
+
+        .work-title {
+            font-family: var(--font-hero);
+            font-size: clamp(2.6rem, 5.4vw, 6rem);
+            line-height: 0.92;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+        }
+        .work-title em { transition: color 0.4s ease; }
+        .work-dek {
+            display: block;
+            font-family: var(--font-ui);
+            font-size: 0.9rem;
+            line-height: 1.5;
+            letter-spacing: 0;
+            color: var(--text-secondary);
+            margin-top: 1rem;
+            max-width: 52ch;
+        }
+
+        .work-meta {
+            font-family: var(--font-mono);
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            text-align: right;
+            color: var(--text-secondary);
+            align-self: flex-start;
+            padding-top: 1.2rem;
+        }
+        .work-meta .outcome { color: var(--ui-accent); transition: color 1.5s ease; }
+
+        .work-item.forthcoming { opacity: 0.42; }
+        .work-item.forthcoming .work-title { font-style: italic; }
+
+        footer.colophon {
+            background: var(--scrim);
+            transition: background 1.5s ease;
+            padding: 0 var(--pad) var(--pad);
+        }
+        .colophon-inner {
+            max-width: 1100px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            gap: 2rem;
+            flex-wrap: wrap;
+            font-family: var(--font-mono);
+            font-size: 0.7rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            color: var(--text-secondary);
+        }
+        .colophon-inner a { text-decoration: none; }
+        .colophon-inner a:hover { color: var(--text-primary); }
+
+        @media (max-width: 768px) {
+            .controls { gap: 1.25rem; }
+            .hero-screen {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr auto auto;
+            }
+            .hero-kicker, h1, .hero-sub { transform: none; }
+            .definition-block { margin-bottom: 2rem; }
+            .footer-info {
+                grid-column: 1;
+                grid-row: 3;
+                justify-self: start;
+                text-align: left;
+            }
+            .manifesto-inner { grid-template-columns: 1fr; gap: 1.5rem; }
+            .manifesto .label { padding-top: 0; }
+            .work-item {
+                grid-template-columns: 40px 1fr;
+                padding: 1.75rem 0;
+                gap: 0.75rem;
+            }
+            .work-meta {
+                grid-column: 2;
+                text-align: left;
+                padding-top: 0.5rem;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            html { scroll-behavior: auto; }
+            *, *::before, *::after { transition-duration: 0.01ms !important; }
+            a.work-item:hover { transform: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <a class="skip" href="#contents">Skip to contents</a>
+    <div id="canvas-container" aria-hidden="true"></div>
+
+    <header class="top">
+        <a href="./" class="logo">promethean</a>
+        <nav class="controls" aria-label="Site">
+            <a href="#contents" class="nav-link">Contents</a>
+            <div class="theme-toggle-container">
+                <div class="theme-indicator" aria-hidden="true"></div>
+                <button id="theme-toggle" type="button" aria-pressed="false">Night Mode</button>
+            </div>
+        </nav>
+    </header>
+
+    <main id="ui-layer">
+
+        <section class="hero-screen" aria-labelledby="h-title">
+            <div class="hero">
+                <h1 id="h-title">Promethean</h1>
+                <p class="hero-sub">The Promethean Series</p>
+            </div>
+
+            <div class="definition-block">
+                <div class="def-word">promethean</div>
+                <div class="def-meta">
+                    <span class="def-phonetic">/prəˈmiː.θi.ən/</span>
+                    <span>adjective</span>
+                </div>
+                <div class="def-text">
+                    daring and original in the manner of Prometheus, who stole fire from the gods, handed it to a species made of mud, and paid for it with his liver, every day, for the rest of time.
+                </div>
+            </div>
+
+            <div class="footer-info">
+                <div>N° 01 published · October 2026</div>
+                <a href="#contents">Enter the contents ↓</a>
+            </div>
+        </section>
+
+        <section class="manifesto surface" aria-label="About the series">
+            <div class="manifesto-inner">
+                <span class="label">Premise</span>
+                <div class="manifesto-body">
+                    <p>Prometheus carried fire down from Olympus hidden in a fennel stalk, and Zeus chained him to a rock in the Caucasus for it. The Greeks told the story as a warning. The species has been ignoring it with admirable consistency for about two and a half thousand years.</p>
+                    <p>Before Jenner vaccinated anyone against smallpox, he wrote a short book arguing that cowpox could do it. Before anyone built a machine that could hold a conversation, Turing wrote a paper asking whether machines could think. Most of what we now take for granted started as a text that someone had to read carefully before they believed it. The Promethean Series publishes those texts in full, typeset for long reading.</p>
+                    <p>Some of these works celebrate the fire. Some keep a careful inventory of the burns. Both are written in honour of the same animal, the one that keeps stealing it.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="contents" id="contents" aria-labelledby="h-contents">
+            <div class="work-container">
+                <div class="contents-head">
+                </div>
+
+                <a href="the-world-as-phantom-and-as-matrix/" class="work-item">
+                    <div class="work-number">01</div>
+                    <div class="work-title">
+                        The World as <em>Phantom</em> and as <em>Matrix</em>
+                        <span class="work-dek">Günther Anders on radio and television, written in 1956 about a world delivered to your living room as a picture of itself. Read now, it describes the feed in uncomfortable detail.</span>
+                    </div>
+                    <div class="work-meta">
+                        <span>Günther Anders · 1956</span>
+                        <span>5 chapters · ~3 h</span>
+                        <span class="outcome">Read ↗</span>
+                    </div>
+                </a>
+
+                <div class="work-item forthcoming" aria-label="Forthcoming">
+                    <div class="work-number">02</div>
+                    <div class="work-title">In the forge</div>
+                    <div class="work-meta">
+                        <span>Forthcoming</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <footer class="colophon">
+            <div class="colophon-inner">
+                <span>Promethean · Texts belong to their authors and translators</span>
+                <a href="https://github.com/jcgaal/promethean">Source ↗</a>
+            </div>
+        </footer>
+
+    </main>
+
+    <script>
+        (function () {
+            const store = {
+                get(k, d) { try { const v = localStorage.getItem('promethean:' + k); return v == null ? d : JSON.parse(v); } catch { return d; } },
+                set(k, v) { try { localStorage.setItem('promethean:' + k, JSON.stringify(v)); } catch {} }
+            };
+
+            const body = document.body;
+            const themeToggleBtn = document.getElementById('theme-toggle');
+            const metaTheme = document.querySelector('meta[name="theme-color"]');
+            const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+            let isNightMode = store.get('index-theme', 'night') !== 'day';
+            let uniforms = null;
+
+            function paintTheme(animate) {
+                body.classList.toggle('theme-light', !isNightMode);
+                themeToggleBtn.innerText = isNightMode ? 'Night Mode' : 'Day Mode';
+                themeToggleBtn.setAttribute('aria-pressed', String(!isNightMode));
+                metaTheme.setAttribute('content', isNightMode ? '#030303' : '#F2EBDD');
+                if (!uniforms) return;
+                const target = isNightMode ? 0.0 : 1.0;
+                if (animate && window.gsap && !reduceMotion) {
+                    gsap.to(uniforms.u_theme_mix, { value: target, duration: 2.0, ease: 'power2.inOut' });
+                } else {
+                    uniforms.u_theme_mix.value = target;
+                }
+            }
+
+            themeToggleBtn.addEventListener('click', () => {
+                isNightMode = !isNightMode;
+                store.set('index-theme', isNightMode ? 'night' : 'day');
+                paintTheme(true);
+            });
+
+            paintTheme(false);
+
+            window.addEventListener('DOMContentLoaded', () => {
+                if (!window.THREE) return;
+                let renderer;
+                try {
+                    renderer = new THREE.WebGLRenderer({ antialias: false, alpha: false });
+                } catch (e) {
+                    return; // no WebGL: the CSS gradient on <body> stands in
+                }
+
+                const container = document.getElementById('canvas-container');
+                const scene = new THREE.Scene();
+                const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0.1, 10);
+                camera.position.z = 1;
+                renderer.setSize(window.innerWidth, window.innerHeight);
+                renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+                container.appendChild(renderer.domElement);
+
+                const vertexShader = `
+                    varying vec2 vUv;
+                    void main() {
+                        vUv = uv;
+                        gl_Position = vec4(position, 1.0);
+                    }
+                `;
+
+                const fragmentShader = `
+                    uniform float u_time;
+                    uniform vec2 u_resolution;
+                    uniform float u_theme_mix; // 0.0 = Night, 1.0 = Day
+                    varying vec2 vUv;
+
+                    float random(vec2 st) {
+                        return fract(sin(dot(st.xy, vec2(12.9898,78.233))) * 43758.5453123);
+                    }
+
+                    vec3 mod289(vec3 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                    vec2 mod289(vec2 x) { return x - floor(x * (1.0 / 289.0)) * 289.0; }
+                    vec3 permute(vec3 x) { return mod289(((x*34.0)+1.0)*x); }
+                    float snoise(vec2 v) {
+                        const vec4 C = vec4(0.211324865405187, 0.366025403784439, -0.577350269189626, 0.024390243902439);
+                        vec2 i  = floor(v + dot(v, C.yy) );
+                        vec2 x0 = v -   i + dot(i, C.xx);
+                        vec2 i1;
+                        i1 = (x0.x > x0.y) ? vec2(1.0, 0.0) : vec2(0.0, 1.0);
+                        vec4 x12 = x0.xyxy + C.xxzz;
+                        x12.xy -= i1;
+                        i = mod289(i);
+                        vec3 p = permute( permute( i.y + vec3(0.0, i1.y, 1.0 )) + i.x + vec3(0.0, i1.x, 1.0 ));
+                        vec3 m = max(0.5 - vec3(dot(x0,x0), dot(x12.xy,x12.xy), dot(x12.zw,x12.zw)), 0.0);
+                        m = m*m ;
+                        m = m*m ;
+                        vec3 x = 2.0 * fract(p * C.www) - 1.0;
+                        vec3 h = abs(x) - 0.5;
+                        vec3 ox = floor(x + 0.5);
+                        vec3 a0 = x - ox;
+                        m *= 1.79284291400159 - 0.85373472095314 * ( a0*a0 + h*h );
+                        vec3 g;
+                        g.x  = a0.x  * x0.x  + h.x  * x0.y;
+                        g.yz = a0.yz * x12.xz + h.yz * x12.yw;
+                        return 130.0 * dot(m, g);
+                    }
+
+                    void main() {
+                        vec2 st = gl_FragCoord.xy / u_resolution.xy;
+                        vec2 uv = st;
+                        uv.x *= u_resolution.x / u_resolution.y;
+
+                        // The structural fold: a diagonal seam the fire climbs along
+                        float foldAngle = 0.8;
+                        vec2 foldDir = vec2(cos(foldAngle), sin(foldAngle));
+                        float foldDist = dot(uv, foldDir) - 0.5;
+                        float n = snoise(uv * 1.5 + u_time * 0.1) * 0.5;
+                        float intensity = smoothstep(-0.2, 0.8, foldDist + n * 0.5);
+                        float shadow = 1.0 - smoothstep(0.0, 0.1, abs(foldDist + n * 0.2)) * 0.5;
+                        intensity *= shadow;
+
+                        // Night: void, ember, the gold of old paper held to a flame
+                        vec3 n_color1 = vec3(0.012, 0.012, 0.012);
+                        vec3 n_color2 = vec3(0.74, 0.28, 0.07);
+                        vec3 n_color3 = vec3(0.93, 0.67, 0.42);
+
+                        // Day: vellum, terracotta, rust
+                        vec3 d_color1 = vec3(0.95, 0.92, 0.87);
+                        vec3 d_color2 = vec3(0.85, 0.48, 0.34);
+                        vec3 d_color3 = vec3(0.55, 0.17, 0.10);
+
+                        vec3 nightColor = mix(n_color1, n_color2, intensity);
+                        nightColor = mix(nightColor, n_color3, smoothstep(0.6, 1.0, intensity));
+                        vec3 dayColor = mix(d_color1, d_color2, intensity);
+                        dayColor = mix(dayColor, d_color3, smoothstep(0.6, 1.0, intensity));
+                        vec3 finalColor = mix(nightColor, dayColor, u_theme_mix);
+
+                        // Film grain
+                        float grain = random(st * (u_time * 0.01 + 1.0));
+                        finalColor += (grain - 0.5) * 0.12;
+
+                        gl_FragColor = vec4(finalColor, 1.0);
+                    }
+                `;
+
+                uniforms = {
+                    u_time: { value: 0.0 },
+                    u_resolution: { value: new THREE.Vector2(window.innerWidth, window.innerHeight) },
+                    u_theme_mix: { value: isNightMode ? 0.0 : 1.0 }
+                };
+
+                const material = new THREE.ShaderMaterial({ vertexShader, fragmentShader, uniforms });
+                scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), material));
+                body.style.backgroundImage = 'none';
+
+                const clock = new THREE.Clock();
+                function animate() {
+                    requestAnimationFrame(animate);
+                    // Reduced motion: the fire holds still
+                    uniforms.u_time.value = reduceMotion ? 12.0 : clock.getElapsedTime();
+                    renderer.render(scene, camera);
+                }
+                animate();
+
+                window.addEventListener('resize', () => {
+                    const width = window.innerWidth;
+                    const height = window.innerHeight;
+                    renderer.setSize(width, height);
+                    uniforms.u_resolution.value.set(width, height);
+                });
+            });
+        })();
+    </script>
+
+</body>
+</html>
